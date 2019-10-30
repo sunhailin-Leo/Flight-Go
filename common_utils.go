@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/go-resty/resty"
 	"github.com/tidwall/gjson"
+	"time"
 )
 
 const (
@@ -34,5 +35,14 @@ func initCityNameCodeData() {
 			}
 		}
 		logger.Info("[Flight-Go]初始化数据成功!")
+	}
+}
+
+// 时间戳转时间
+func timestampToTime(timestamp int64) string {
+	if timestamp != 0 {
+		return time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
+	} else {
+		return "--:--"
 	}
 }

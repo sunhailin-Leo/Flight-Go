@@ -116,28 +116,6 @@ func (c *CtripCrawler) getFlightTablePayload(departureCityName, arriveCityName, 
 	return string(jsonData)
 }
 
-// 表格查询
-func (c *CtripCrawler) runFlightTableCrawler(departureCityName, arriveCityName, date, classType, tripType string, onlyLowPrice bool) {
-	c.IsOnlyLowerPrice = onlyLowPrice
-	payloadData := c.getFlightTablePayload(departureCityName, arriveCityName, date, classType, tripType)
-	dataResp, err := c.RestClient.R().
-		SetHeader("content-type", ContentType).
-		SetHeader("origin", APIRequestOrigin).
-		SetHeader("referer", APIRequestReferer).
-		SetHeader("user-agent", UserAgent).
-		SetBody(payloadData).
-		Post(PlaneAPIURL)
-	if err != nil {
-		logger.Fatalf("[Flight-Go]接口请求出错!, 错误原因: %s", err.Error())
-	} else {
-		if dataResp.String() != "" {
-			c.parseFlightTable(gjson.Parse(dataResp.String()))
-		} else {
-			logger.Error("[Flight-Go]接口数据为空!")
-		}
-	}
-}
-
 // 解析表格
 func (c *CtripCrawler) parseFlightTable(tableJson gjson.Result) {
 	c.initFlightTable()
@@ -278,4 +256,26 @@ func (c *CtripCrawler) parseFlightTable(tableJson gjson.Result) {
 		}
 	}
 	c.FlightTable.Render()
+}
+
+// 表格查询
+func (c *CtripCrawler) runFlightTableCrawler(departureCityName, arriveCityName, date, classType, tripType string, onlyLowPrice bool) {
+	c.IsOnlyLowerPrice = onlyLowPrice
+	payloadData := c.getFlightTablePayload(departureCityName, arriveCityName, date, classType, tripType)
+	dataResp, err := c.RestClient.R().
+		SetHeader("content-type", ContentType).
+		SetHeader("origin", APIRequestOrigin).
+		SetHeader("referer", APIRequestReferer).
+		SetHeader("user-agent", UserAgent).
+		SetBody(payloadData).
+		Post(PlaneAPIURL)
+	if err != nil {
+		logger.Fatalf("[Flight-Go]接口请求出错!, 错误原因: %s", err.Error())
+	} else {
+		if dataResp.String() != "" {
+			c.parseFlightTable(gjson.Parse(dataResp.String()))
+		} else {
+			logger.Error("[Flight-Go]接口数据为空!")
+		}
+	}
 }

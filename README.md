@@ -25,23 +25,33 @@
 chmod a+x flight_go
 # 查询机票价格信息
 ./flight_go schedule <起飞机场> <到达机场> <当前日期(日期格式: YYYY-MM-DD)>
+# 查询航班号信息
+./flight_go code <航班号> <当前日期(日期格式: YYYYMMDD)>
+# 查询机场进出港信息
+./flight_go airport <城市名> <进出港字段(例如,进港: arr; 出港: dep)>
 ```
 
 **Windows 下使用(Windows 控制台下)**
 ```shell script
 # 查询机票价格信息
 flight_go.exe schedule <起飞机场> <到达机场> <当前日期(日期格式: YYYY-MM-DD)>
+# 查询航班号信息
+flight_go.exe code <航班号> <当前日期(日期格式: YYYYMMDD)>
+# 查询机场进出港信息
+flight_go.exe airport <城市名> <进出港字段(例如,进港: arr; 出港: dep)>
 ```
 
 ## 📖 功能说明
 
-* 目前暂时开发了两个功能:
+* 目前暂时开发了几个功能:
     * Version v0.1.0
-        * 通过日期查询两地航班信息
+        * 查询两地航班价格信息（提供起始地和日期）
+        * 查询某个航班信息（提供航班号）
+        * 查询某个机场的进出港信息（提供）
 
 * 后续开发功能点:
     * 命令行参数提示
-    * 加入代理配置
+    * 考虑加入代理配置
     * 争取完善一些命令行交互以及其他查询功能
 
 ## 📃 License
