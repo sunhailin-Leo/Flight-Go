@@ -41,6 +41,15 @@ flight_go.exe code <航班号> <当前日期(日期格式: YYYYMMDD)>
 flight_go.exe airport <城市名> <进出港字段(例如,进港: arr; 出港: dep)>
 ```
 
+**机票价格信息查询**
+![price](https://s2.ax1x.com/2019/10/30/KhtCJ1.png)
+
+**航班号信息查询**
+![code](https://s2.ax1x.com/2019/10/30/Kht9iR.png)
+
+**机场进出港信息查询**
+![airport](https://s2.ax1x.com/2019/10/30/KhtPRx.png)
+
 ## 📖 功能说明
 
 * 目前暂时开发了几个功能:
