@@ -1,8 +1,11 @@
 package main
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"github.com/go-resty/resty"
 	"github.com/tidwall/gjson"
+	"strings"
 	"time"
 )
 
@@ -45,4 +48,26 @@ func timestampToTime(timestamp int64) string {
 	} else {
 		return "--:--"
 	}
+}
+
+// 字符串 format
+func stringFormat(format string, args ...string) (formatString string) {
+	return strings.NewReplacer(args...).Replace(format)
+}
+
+// 通过自定义字符串获取随机 MD5 字符串
+func getRandomMD5ByCustomStr(str string) string {
+	md5Context := md5.New()
+	md5Context.Write([]byte(str))
+	return hex.EncodeToString(md5Context.Sum(nil))
+}
+
+// 分钟转 小时分钟 （例如: 75分钟 转换为 1小时15分钟）
+const (
+	Minute = 60
+	Hour   = Minute * 60
+)
+
+func minutesToHour(minutes int64) (int64, int64) {
+	return minutes / Minute, minutes % 60
 }

@@ -38,6 +38,7 @@ func main() {
 				break
 			}
 		}
+		logger.Errorf("[Flight-Go]命令参数错误!")
 	} else {
 		logger.Errorf("[Flight-Go]命令参数错误!")
 	}
