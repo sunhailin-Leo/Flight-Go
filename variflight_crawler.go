@@ -7,26 +7,6 @@ import (
 	"os"
 )
 
-const (
-	AirportDepAPIURL           string = "https://adsbapi.variflight.com/adsb/airport/api/departures"
-	AirportArrAPIURL           string = "https://adsbapi.variflight.com/adsb/airport/api/arrival"
-	FlightNumberAPIURL         string = "https://adsbapi.variflight.com/adsb/index/advancedSearch"
-	FlightNumberAPIContentType string = "application/x-www-form-urlencoded"
-)
-
-var FlightNumberInfoTableHeader = []string{"航班状态", "航班号", "出发机场", "到达机场", "计划起飞时间", "实际起飞时间", "计划到达时间", "实际到达时间", "机型", "飞机注册号"}
-
-// TODO: 状态 3 目前不知道是啥
-var FlightNumberStatus = map[int64]string{
-	0:  "计划",
-	1:  "起飞",
-	2:  "到达",
-	4:  "延误",
-	73: "提前取消",
-}
-var AirportInfoDepTableHeader = []string{"航班号", "机型", "到达地", "到达机场", "计划起飞时间", "实际起飞时间", "状态"}
-var AirportInfoArrTableHeader = []string{"航班号", "机型", "出发地", "出发机场", "计划到达时间", "实际到达时间", "状态"}
-
 type VariFlightCrawler struct {
 	RestClient *resty.Client
 
@@ -100,7 +80,7 @@ func (v *VariFlightCrawler) runFlightInfo(flightNumber, date string) {
 	payloadData := v.getFlightNumberPayload(flightNumber, date)
 	dataResp, err := v.RestClient.R().
 		SetQueryParam("lang", "zh_CN").
-		SetHeader("Content-Type", FlightNumberAPIContentType).
+		SetHeader("Content-Type", ContentTypeForm).
 		SetHeader("User-Agent", UserAgent).
 		SetFormData(payloadData).
 		Post(FlightNumberAPIURL)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 )
 
 type FlightCommand struct {
@@ -19,7 +20,6 @@ var (
 	flightDepartureCityName string
 	flightArrivalCityName   string
 	flightDate              string
-	flightClassType         string
 	flightTripType          string
 )
 
@@ -28,6 +28,7 @@ var (
 	flightOverSeaDepartureCityName string
 	flightOverSeaArrivalCityName   string
 	flightOverSeaDate              string
+	flightOverSeaCabinType         string
 )
 
 var (
@@ -66,14 +67,17 @@ func executeFlightNumberInfoTableFunc(args []string) int {
 // 查询国际航班信息
 func executeOverSeaFlightTableFunc(args []string) int {
 	flightTable := NewCtripCrawler()
-	flightTable.runOverSeaFlightTableCrawler(args[0], args[1], args[2])
+	if len(args) < 4 {
+		args = append(args, "")
+	}
+	flightTable.runOverSeaFlightTableCrawler(args[0], args[1], args[2], args[3])
 	return 1
 }
 
 // 查询国内航班信息
 func executeFlightTableFunc(args []string) int {
 	flightTable := NewCtripCrawler()
-	flightTable.runMainLandFlightTableCrawler(args[0], args[1], args[2], "ALL", "Oneway", true)
+	flightTable.runMainLandFlightTableCrawler(args[0], args[1], args[2], "Oneway", true)
 	return 1
 }
 
@@ -90,6 +94,7 @@ func commandLineInit() {
 	flightOverSeaTableCommand.Flag.StringVar(&flightOverSeaDepartureCityName, "dep", "", "需要查询的始发地")
 	flightOverSeaTableCommand.Flag.StringVar(&flightOverSeaArrivalCityName, "arr", "", "需要查询的目的地")
 	flightOverSeaTableCommand.Flag.StringVar(&flightOverSeaDate, "date", "", "需要搜索的日期（格式: YYYY-MM-DD 例如: 2019-10-17）")
+	flightOverSeaTableCommand.Flag.StringVar(&flightOverSeaCabinType, "cabin", "", "舱位等级（经济舱，超级经济舱，商务/头等舱，商务舱，公务舱，头等舱）")
 
 	// 航班号信息
 	flightNumberInfoCommand.Run = executeFlightNumberInfoTableFunc
@@ -100,4 +105,14 @@ func commandLineInit() {
 	airportInfoCommand.Run = executeAirportInfoTableFunc
 	airportInfoCommand.Flag.StringVar(&airportName, "airportName", "", "需要查询机场名称（例如: 广州）")
 	airportInfoCommand.Flag.StringVar(&airportDepOrArr, "depOrArr", "", "进场的进出港类别")
+}
+
+// 输出命令的使用方式
+func commandUsage() {
+	flag.Usage()
+	fmt.Println("\n参数(Options):")
+	fmt.Println("    schedule <起飞机场> <到达机场> <当前日期(日期格式: YYYY-MM-DD)>")
+	fmt.Println("    oversea <起飞地> <到达地> <当前日期(日期格式: YYYY-MM-DD)> <舱位等级>")
+	fmt.Println("    code <航班号> <当前日期(日期格式: YYYYMMDD)>")
+	fmt.Println("    airport <城市名> <进出港字段(例如,进港: arr; 出港: dep)>")
 }

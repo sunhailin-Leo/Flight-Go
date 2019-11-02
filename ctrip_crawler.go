@@ -16,34 +16,6 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-const (
-	PlaneAPIURL       string = "https://flights.ctrip.com/itinerary/api/12808/products"
-	ContentType       string = "application/json"
-	APIRequestOrigin  string = "https://flights.ctrip.com"
-	APIRequestReferer string = "https://flights.ctrip.com/itinerary/oneway/bjs-ctu?date=2019-11-15"
-
-	DepartureStrFormat string = "\033[31m(始)\033[0m:%s%s(%s)"
-	ArrivalStrFormat   string = "\033[32m(终)\033[0m:%s%s(%s)"
-
-	HasMeal    string = "有餐食"
-	HasNotMeal string = "无餐食"
-
-	SuperEconomyClassName string = "超级经济舱"
-	EconomyClassName      string = "经济舱"
-	BusinessClassName     string = "商务舱"
-	FirstClassName        string = "头等舱"
-)
-
-var FlightTableHeader = []string{"航空公司", "航班号", "起飞", "起飞时间", "到达", "到达时间", "机型", "餐食", "准点率", "经济舱", "商务舱", "头等舱"}
-var CabinClassMap = map[string]string{
-	"Y":    EconomyClassName,
-	"C":    BusinessClassName,
-	"F":    FirstClassName,
-	"S":    SuperEconomyClassName,
-	"@S-Y": fmt.Sprintf("%s-%s", SuperEconomyClassName, EconomyClassName),
-	"@S-C": fmt.Sprintf("%s-%s", SuperEconomyClassName, BusinessClassName),
-}
-
 type AirportParams struct {
 	ACity     string `json:"acity"`
 	ACityName string `json:"acityname"`
@@ -133,7 +105,6 @@ func (c *CtripCrawler) parseFlightTable(tableJson gjson.Result) {
 		if tripType == "Flight" {
 			flightLegs := flightInfoHeader.Get("legs").Array()
 			for _, flightInfo := range flightLegs {
-				// 核心信息
 				flightData := flightInfo.Get("flight")
 				// 航空公司和航班号
 				airlineName := flightData.Get("airlineName").String()
@@ -244,18 +215,8 @@ func (c *CtripCrawler) parseFlightTable(tableJson gjson.Result) {
 				}
 				// 合并到表格中
 				row := []string{
-					airlineName,
-					flightNumber,
-					departureInfo,
-					departureTime,
-					arrivalInfo,
-					arrivalTime,
-					aircraftInfo,
-					mealInfo,
-					punctualityRate,
-					economyClassPrice,
-					businessClassPrice,
-					firstClassPrice,
+					airlineName, flightNumber, departureInfo, departureTime, arrivalInfo, arrivalTime,
+					aircraftInfo, mealInfo, punctualityRate, economyClassPrice, businessClassPrice, firstClassPrice,
 				}
 				c.FlightTable.Append(row)
 			}
@@ -265,11 +226,11 @@ func (c *CtripCrawler) parseFlightTable(tableJson gjson.Result) {
 }
 
 // 国内航班查询
-func (c *CtripCrawler) runMainLandFlightTableCrawler(departureCityName, arriveCityName, date, classType, tripType string, onlyLowPrice bool) {
+func (c *CtripCrawler) runMainLandFlightTableCrawler(departureCityName, arriveCityName, date, tripType string, onlyLowPrice bool) {
 	c.IsOnlyLowerPrice = onlyLowPrice
-	payloadData := c.getFlightTablePayload(departureCityName, arriveCityName, date, classType, tripType)
+	payloadData := c.getFlightTablePayload(departureCityName, arriveCityName, date, "ALL", tripType)
 	dataResp, err := c.RestClient.R().
-		SetHeader("content-type", ContentType).
+		SetHeader("content-type", ContentTypeJson).
 		SetHeader("origin", APIRequestOrigin).
 		SetHeader("referer", APIRequestReferer).
 		SetHeader("user-agent", UserAgent).
@@ -310,23 +271,12 @@ Js 加密参数方法源文件: https://webresource.c-ctrip.com/ResFltIntlOnline
 	}
 }
 */
-const (
-	CityCodeURL string = "https://flights.ctrip.com/international/search/api/poi/search?"
-	// cabin 参数: y_s 经济/超级经济舱; c_f 公务/头等舱; c 公务舱; f 头等舱
-	FormDataURL                string = "https://flights.ctrip.com/international/search/oneway-{dep}-{arr}?depdate={date}&cabin=y_s&adult=1&child=0&infant=0"
-	OverSeaAirplaneURL         string = "https://flights.ctrip.com/international/search/api/search/batchSearch?v="
-	OverSeaAirplanePullDataURL string = "https://flights.ctrip.com/international/search/api/search/pull/{searchId}?v="
-)
-
-var OverSeaFlightTableHeader = []string{"航班号", "航空公司", "机型", "起飞地", "起飞时间", "到达地", "到达时间", "飞行时间", "转机时间"}
-var OverSeaFlightTableFooter = []string{"", "", "", "", "", "", "总飞行时长"}
-
 // 通过国家或者城市名查询城市号
 func (c *CtripCrawler) getCityCode(cityName string) string {
 	params := url.Values{}
 	params.Add("key", cityName)
 	dataResp, err := c.RestClient.R().
-		SetHeader("Accept", ContentType).
+		SetHeader("Accept", ContentTypeJson).
 		SetHeader("user-agent", UserAgent).
 		Get(fmt.Sprintf("%s%s", CityCodeURL, params.Encode()))
 	if err != nil {
@@ -348,10 +298,10 @@ func (c *CtripCrawler) getCityCode(cityName string) string {
 }
 
 // 获取 form 表单数据
-func (c *CtripCrawler) getAPIFormData(departureCityName, arriveCityName, date string) string {
+func (c *CtripCrawler) getAPIFormData(departureCityName, arriveCityName, date, cabin string) string {
 	depCode := c.getCityCode(departureCityName)
 	arrCode := c.getCityCode(arriveCityName)
-	reqURL := stringFormat(FormDataURL, "{dep}", depCode, "{arr}", arrCode, "{date}", date)
+	reqURL := stringFormat(FormDataURL, "{dep}", depCode, "{arr}", arrCode, "{date}", date, "{cabin}", cabin)
 	dataResp, err := c.RestClient.R().SetHeader("User-Agent", UserAgent).Get(reqURL)
 	if err != nil {
 		logger.Fatalf("[Flight-Go]接口请求出错!, 错误原因: %s", err.Error())
@@ -378,7 +328,7 @@ func (c *CtripCrawler) generateSignValue(data string) (string, string) {
 }
 
 // 解析国外航班数据表格
-func (c *CtripCrawler) parseOverSeaFlightTable(tableJson []gjson.Result) {
+func (c *CtripCrawler) parseOverSeaFlightTable(tableJson []gjson.Result, cabinName string) {
 	for _, flightData := range tableJson {
 		// 给机票表格
 		eachFlightTable := tablewriter.NewColorWriter(os.Stdout)
@@ -421,16 +371,41 @@ func (c *CtripCrawler) parseOverSeaFlightTable(tableJson []gjson.Result) {
 		// 飞行时间
 		hour, minutes := minutesToHour(flightSegments.Get("duration").Int())
 		totalFlightTime := fmt.Sprintf("%d 小时 %d 分钟", hour, minutes)
-		// TODO 将机票价格展示（目前暂时没有加入）
+		// 将机票价格展示（目前暂时没有加入）
+		flightPricesFunc := func() []int64 {
+			var priceList []int64
+			for _, price := range flightData.Get("priceList").Array() {
+				totalPrice := price.Get("adultPrice").Int() + price.Get("adultTax").Int()
+				priceList = append(priceList, totalPrice)
+			}
+			return priceList
+		}
+		OverSeaFlightTableFooter[3] = fmt.Sprintf("当前舱位: %s", cabinName)
+		OverSeaFlightTableFooter[4] = fmt.Sprintf("最低价格: %d 元", flightPricesFunc()[0])
 		// 渲染表格
 		eachFlightTable.SetFooter(append(OverSeaFlightTableFooter, totalFlightTime, ""))
 		eachFlightTable.Render()
 	}
 }
 
+// 国外航班舱位信息
+func (c *CtripCrawler) overSeaFlightSeatTypeToCabinName(seatType string) string {
+	cabinName := seatType
+	if seatType == "" {
+		cabinName = "y_s"
+	} else {
+		cabinName = CabinNameCode[seatType]
+	}
+	if cabinName == "" {
+		logger.Fatal("[Flight-Go]舱位参数错误!")
+	}
+	return cabinName
+}
+
 // 国外航班查询
-func (c *CtripCrawler) runOverSeaFlightTableCrawler(departureCityName, arriveCityName, date string) {
-	body := c.getAPIFormData(departureCityName, arriveCityName, date)
+func (c *CtripCrawler) runOverSeaFlightTableCrawler(departureCityName, arriveCityName, date, seatType string) {
+	cabinName := c.overSeaFlightSeatTypeToCabinName(seatType)
+	body := c.getAPIFormData(departureCityName, arriveCityName, date, cabinName)
 	if body == "" {
 		logger.Fatal("[Flight-Go]接口请求出错! 数据异常!")
 	}
@@ -441,7 +416,7 @@ func (c *CtripCrawler) runOverSeaFlightTableCrawler(departureCityName, arriveCit
 	for {
 		//logger.Infof("[Flight-Go]当前请求的地址: %s", reqURL)
 		dataResp, err := c.RestClient.R().
-			SetHeader("Content-Type", ContentType).
+			SetHeader("Content-Type", ContentTypeJson).
 			SetHeader("User-Agent", UserAgent).
 			SetHeader("sign", sign).
 			SetHeader("transactionid", transactionId).
@@ -466,5 +441,5 @@ func (c *CtripCrawler) runOverSeaFlightTableCrawler(departureCityName, arriveCit
 		}
 		time.Sleep(time.Second * 1)
 	}
-	c.parseOverSeaFlightTable(allFlightData)
+	c.parseOverSeaFlightTable(allFlightData, seatType)
 }

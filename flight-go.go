@@ -17,8 +17,6 @@ const (
 func main() {
 	// 初始化日志
 	logger = NewLogger(logMaxAge, logRotationTime, logPath, logFileName)
-	// 初始化数据
-	initCityNameCodeData()
 	// 命令行初始化
 	commandLineInit()
 	commands := flightCommands
@@ -32,14 +30,17 @@ func main() {
 				}
 				args = cmd.Flag.Args()
 				if len(args) > 0 {
+					// 初始化数据
+					initCityNameCodeData()
 					os.Exit(cmd.Run(args))
 				}
 				logger.Errorf("[Flight-Go]命令参数错误!")
 				break
 			}
 		}
-		logger.Errorf("[Flight-Go]命令参数错误!")
+		commandUsage()
 	} else {
 		logger.Errorf("[Flight-Go]命令参数错误!")
+		commandUsage()
 	}
 }
